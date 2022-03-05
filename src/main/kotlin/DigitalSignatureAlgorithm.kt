@@ -2,14 +2,14 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-class DigitalSignatureAlgorithm (length: Int) {
-    private var p:BigInteger
-    private var q:BigInteger
-    private var h:BigInteger
-    private var g:BigInteger
+class DigitalSignatureAlgorithm (l: Int, n:Int) {
+    var p:BigInteger
+    var q:BigInteger
+    var h:BigInteger
+    var g:BigInteger
 
     init {
-        val (pTemp, qTemp) = generatePQ(length)
+        val (pTemp, qTemp) = generatePQ(l, n)
         val (hTemp, gTemp) = generateHG(pTemp, qTemp)
         p = pTemp
         q = qTemp
@@ -19,12 +19,12 @@ class DigitalSignatureAlgorithm (length: Int) {
 
     fun sign(x:BigInteger, m:ByteArray, md:MessageDigest):Pair<BigInteger, BigInteger> {
         do {
-            val j = getRandomBigInteger(BigInteger.TWO, q- BigInteger.ONE)
+            val j = getRandomBigInteger(BigInteger.ONE, q- BigInteger.ONE)
             val r = squareMultiply(g,j,p) % q
             if (r== BigInteger.ZERO) continue // choose new j
 
-            val jInv = eeA(j,q)[1]+q
-            val s = jInv * (md.digest(m).asPositiveBigInteger() + r*x) % q
+            val jInv = eeA(j,q)[1].mod(q)
+            val s = (jInv * (md.digest(m).asPositiveBigInteger() + r*x)).mod(q)
 
             if (s != BigInteger.ZERO) return Pair(r,s)
             // else choose new j and try again
@@ -32,24 +32,32 @@ class DigitalSignatureAlgorithm (length: Int) {
     }
 
     fun verify(y:BigInteger, m:ByteArray, md:MessageDigest, r:BigInteger, s:BigInteger):Boolean {
-        if (!(BigInteger.ZERO<r && r<q && BigInteger.ZERO<s && s<q)) return false
+        if (!(BigInteger.ZERO < r && r < q && BigInteger.ZERO < s && s < q)) return false
 
-        val w = eeA(s,q)[1]+q // to prevent negative values
-        val u1 = md.digest(m).asPositiveBigInteger()*w % q
-        val u2 = r*w % q
-        val v = squareMultiply(g,u1,p) * squareMultiply(y,u2,p) % q
+        val w = eeA(s,q)[1].mod(q)
+        val u1 = (md.digest(m).asPositiveBigInteger()*w) % q
+        val u2 = (r*w) % q
+        val v = (squareMultiply(g,u1,p) * squareMultiply(y,u2,p)) % q
 
         return v == r
     }
 
+    fun generateXY(q:BigInteger):Pair<BigInteger, BigInteger> {
+        val x = getRandomBigInteger(BigInteger.ONE, q- BigInteger.ONE)
+        val y = squareMultiply(g,x,p)
+        return Pair(x, y)
+    }
 
-    private fun generatePQ(lengthOfQ: Int):Pair<BigInteger, BigInteger> {
+
+    private fun generatePQ(l: Int, n:Int):Pair<BigInteger, BigInteger> {
         do {
-            val q = getPrime(lengthOfQ)
+            val q = getPrime(n)
+            val beginK  = BigInteger.TWO.pow(l-1)/q
 
-            for (k in 1..100) { // the upper limit should be adjusted according to the desired length of q
-                val p = BigInteger.valueOf(k.toLong())*q + BigInteger.ONE
-                if (isProbablePrime(p)) {
+            for (i in 1 ..100) {
+                val k = beginK+BigInteger.valueOf(i.toLong())
+                val p = k*q + BigInteger.ONE
+                if (isProbablePrime(p) && p.bitLength() == l) {
                     return Pair(p,q)
                 }
             }
@@ -61,8 +69,8 @@ class DigitalSignatureAlgorithm (length: Int) {
         var h:BigInteger
         var g:BigInteger
         do {
-            h = getRandomBigInteger(BigInteger.TWO, p- BigInteger.TWO)
-            g = squareMultiply(h, (p- BigInteger.ONE)/q, p)
+            h = getRandomBigInteger(BigInteger.TWO, p - BigInteger.TWO)
+            g = squareMultiply(h, (p - BigInteger.ONE)/q, p)
         } while (g == BigInteger.ONE)
         return Pair(h,g)
     }
@@ -70,13 +78,13 @@ class DigitalSignatureAlgorithm (length: Int) {
 
     private fun getPrime(length:Int): BigInteger {
         val random = SecureRandom()
-        val z = BigInteger(length,random)
+        val z = BigInteger(length-5,random)
         val init = z * BigInteger.valueOf(30)
         var n: BigInteger
         for (j in 0..200) {
             for (i in getSomePrimes()) {
                 n = init + BigInteger.valueOf(i.toLong())+ BigInteger.valueOf(j.toLong())* BigInteger.valueOf(30)
-                if (isProbablePrime(n)) {
+                if (isProbablePrime(n) && n.bitLength() <= length) {
                     return n
                 }
             }
@@ -137,7 +145,7 @@ class DigitalSignatureAlgorithm (length: Int) {
         val r = exponent.bitLength()
         for (i in 0..r) {
             if (exponent.testBit(i)) {
-                y = y*x % modulus
+                y = (y*x) % modulus
             }
             x = x.pow(2) % modulus
         }
