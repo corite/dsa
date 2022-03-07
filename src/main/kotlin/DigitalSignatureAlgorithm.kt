@@ -19,7 +19,7 @@ class DigitalSignatureAlgorithm (l: Int, n:Int) {
 
     fun sign(x:BigInteger, m:ByteArray, md:MessageDigest):Pair<BigInteger, BigInteger> {
         do {
-            val j = getRandomBigInteger(BigInteger.ONE, q- BigInteger.ONE)
+            val j = getRandomBigInteger(BigInteger.TWO, q- BigInteger.ONE)
             val r = squareMultiply(g,j,p) % q
             if (r== BigInteger.ZERO) continue // choose new j
 
@@ -43,7 +43,7 @@ class DigitalSignatureAlgorithm (l: Int, n:Int) {
     }
 
     fun generateXY(q:BigInteger):Pair<BigInteger, BigInteger> {
-        val x = getRandomBigInteger(BigInteger.ONE, q- BigInteger.ONE)
+        val x = getRandomBigInteger(BigInteger.TWO, q- BigInteger.ONE)
         val y = squareMultiply(g,x,p)
         return Pair(x, y)
     }
