@@ -1,4 +1,6 @@
+import java.math.BigInteger
 import java.security.MessageDigest
+import kotlin.system.exitProcess
 
 fun main() {
     val dsa = DigitalSignatureAlgorithm(1024,160)
@@ -9,13 +11,17 @@ fun main() {
     println("x= $x")
     println("y= $y")
 
-    val message = "Hi"
-    val md = MessageDigest.getInstance("SHA-1")
 
-    val (r,s) = dsa.sign(x, message.toByteArray(), md)
+    val message = "Hello World!"
+    val md = MessageDigest.getInstance("SHA-1")
+    println("message= $message")
+    println("message in bytes= ${message.toByteArray().joinToString (" "){ it.toString(16) }}")
+
+
+    val (r, s) = dsa.sign(x, message.toByteArray(), md)
 
     println("r= $r")
     println("s= $s")
 
-    println(dsa.verify(y, message.toByteArray(), md, r, s))
+    println("isValid= ${dsa.verify(y, message.toByteArray(), md, r, s)}")
 }

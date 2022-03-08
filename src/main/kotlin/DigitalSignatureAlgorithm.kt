@@ -37,7 +37,7 @@ class DigitalSignatureAlgorithm (l: Int, n:Int) {
         val w = eeA(s,q)[1].mod(q)
         val u1 = (md.digest(m).asPositiveBigInteger()*w) % q
         val u2 = (r*w) % q
-        val v = (squareMultiply(g,u1,p) * squareMultiply(y,u2,p)) % q
+        val v = ((squareMultiply(g,u1,p) * squareMultiply(y,u2,p)) % p) % q
 
         return v == r
     }
