@@ -106,25 +106,31 @@ class DigitalSignatureAlgorithm (l: Int, n:Int) {
     }
 
     private fun testMillerRabin(n: BigInteger): Boolean {
-        var m: BigInteger
-        var k = 0
-        do {
-            k++
-            m = (n- BigInteger.ONE)/ BigInteger.valueOf(2).pow(k)
-        } while (m % BigInteger.valueOf(2) == BigInteger.ZERO)
-        val a = getRandomBigInteger(BigInteger.valueOf(2), n - BigInteger.ONE)
+        val (k,m) = getKM(n)
+        val a = getRandomBigInteger(BigInteger.TWO, n - BigInteger.ONE)
+
         var b = squareMultiply(a, m, n)
         if (b % n == BigInteger.ONE) {
             return true
         }
         for (i in 1..k) {
-            if (b % n == n- BigInteger.ONE || b % n ==-BigInteger.ONE) {
+            if (b % n == n-BigInteger.ONE || b % n ==-BigInteger.ONE) {
                 return true
             } else {
-                b = squareMultiply(b, BigInteger.valueOf(2), n)
+                b = squareMultiply(b, BigInteger.TWO, n)
             }
         }
         return false
+    }
+
+    private fun getKM(n:BigInteger):Pair<Int, BigInteger> {
+        val n1 = n - BigInteger.ONE
+        var k = 0
+
+        while (n1.testBit(k)) {
+            k++
+        }
+        return Pair(k+1, n1.shiftRight(k+1))
     }
 
     private fun getRandomBigInteger(min: BigInteger, max: BigInteger): BigInteger {

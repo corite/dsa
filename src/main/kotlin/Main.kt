@@ -1,6 +1,4 @@
-import java.math.BigInteger
 import java.security.MessageDigest
-import kotlin.system.exitProcess
 
 fun main() {
     val dsa = DigitalSignatureAlgorithm(1024,160)
